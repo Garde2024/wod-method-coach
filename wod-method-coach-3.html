@@ -1,0 +1,1739 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>WOD Method — Coach</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@500;600;700;800;900&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { background: #080808; color: #f0f0f0; font-family: 'Barlow', sans-serif; min-height: 100vh; }
+  body { max-width: 430px; margin: 0 auto; padding-bottom: 80px; }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+  input, textarea, select { font-family: inherit; background: #111; color: #f0f0f0; border: 1px solid #1e1e1e; border-radius: 6px; padding: 10px 12px; font-size: 14px; width: 100%; }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: #FFD60A; }
+  label { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; font-size: 12px; letter-spacing: 1px; color: #888; margin-bottom: 4px; display: block; }
+  ::placeholder { color: #555; }
+
+  .accent { color: #FFD60A; }
+  .accent-bg { background: #FFD60A; color: #080808; }
+
+  /* === LOGIN === */
+  #login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+  .logo { font-family: 'Bebas Neue', sans-serif; font-size: 42px; letter-spacing: 4px; margin-bottom: 6px; text-align: center; }
+  .logo span { color: #FFD60A; }
+  .logo-sub { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #555; letter-spacing: 3px; margin-bottom: 36px; text-align: center; }
+  .login-card { background: #0d0d0d; border: 1px solid #1e1e1e; border-radius: 14px; padding: 24px; width: 100%; max-width: 360px; }
+  .login-card h2 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 1.5px; font-size: 20px; margin-bottom: 16px; }
+  .field-group { margin-bottom: 12px; }
+  .login-card .btn-primary { width: 100%; padding: 14px; margin-top: 12px; background: #FFD60A; color: #080808; font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 2px; border-radius: 6px; }
+  .login-card .btn-secondary { width: 100%; padding: 12px; margin-top: 8px; background: transparent; color: #888; font-family: 'Barlow Condensed', sans-serif; font-size: 13px; letter-spacing: 1px; border: 1px solid #1e1e1e; border-radius: 6px; text-transform: uppercase; }
+  .login-error { color: #FF1744; font-size: 12px; margin-top: 8px; min-height: 16px; text-align: center; }
+
+  /* === APP === */
+  #app { display: none; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 18px 12px; }
+  .topbar .brand { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; }
+  .topbar .brand span { color: #FFD60A; }
+  .topbar .logout { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 1px; color: #777; text-transform: uppercase; padding: 6px 10px; border: 1px solid #1e1e1e; border-radius: 5px; }
+
+  /* === BOTTOM NAV === */
+  .nav { position: fixed; bottom: 0; left: 0; right: 0; background: #0a0a0a; border-top: 1px solid #1a1a1a; display: flex; justify-content: space-around; padding: 8px 4px; max-width: 430px; margin: 0 auto; z-index: 50; }
+  .nav button { display: flex; flex-direction: column; align-items: center; padding: 6px 4px; flex: 1; font-family: 'Barlow Condensed', sans-serif; font-size: 10px; letter-spacing: 0.5px; text-transform: uppercase; color: #666; }
+  .nav button .ico { font-size: 18px; margin-bottom: 2px; }
+  .nav button.active { color: #FFD60A; }
+
+  /* === SCREENS === */
+  .screen { display: none; padding: 0 14px; }
+  .screen.active { display: block; }
+  .screen-title { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 1.5px; margin-bottom: 4px; padding: 0 4px; }
+  .screen-sub { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #777; letter-spacing: 1px; margin-bottom: 18px; padding: 0 4px; }
+
+  /* === CARDS === */
+  .card { background: #0d0d0d; border: 1px solid #1e1e1e; border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+  .card-title { font-family: 'Bebas Neue', sans-serif; font-size: 16px; letter-spacing: 1.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .card-title::after { content: ""; flex: 1; height: 1px; background: #1e1e1e; }
+
+  .empty-state { text-align: center; padding: 32px 20px; color: #555; font-size: 13px; }
+
+  .alert-line { padding: 10px 12px; background: #0d0d0d; border-left: 3px solid #FFD60A; border-radius: 0 6px 6px 0; margin-bottom: 6px; display: flex; gap: 10px; align-items: center; cursor: pointer; }
+  .alert-line.danger { border-left-color: #FF1744; }
+  .alert-line.warning { border-left-color: #FFD600; }
+  .alert-line .pin { width: 8px; height: 8px; border-radius: 50%; background: #FFD60A; flex-shrink: 0; }
+  .alert-line.danger .pin { background: #FF1744; }
+  .alert-line.warning .pin { background: #FFD600; }
+  .alert-line .info { flex: 1; }
+  .alert-line .name { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .alert-line .meta { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #888; margin-top: 2px; }
+
+  /* === MI DÍA — RESUMEN === */
+  .summary-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .summary-cell { background: #0d0d0d; border: 1px solid #1e1e1e; border-radius: 8px; padding: 10px 6px; text-align: center; }
+  .summary-cell .num { font-family: 'Bebas Neue', sans-serif; font-size: 26px; line-height: 1; color: #FFD60A; }
+  .summary-cell .lbl { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #888; margin-top: 4px; }
+
+  /* === ALUMNOS LIST === */
+  .search-bar { position: relative; margin-bottom: 10px; }
+  .search-bar input { padding-right: 36px; }
+  .search-bar .clear-search { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; color: #555; }
+
+  .filter-chips { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 8px; padding-bottom: 4px; }
+  .filter-chips::-webkit-scrollbar { display: none; }
+  .chip { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; padding: 6px 10px; border-radius: 14px; background: #111; border: 1px solid #1e1e1e; color: #aaa; white-space: nowrap; flex-shrink: 0; }
+  .chip.active { background: #FFD60A; color: #080808; border-color: #FFD60A; }
+  .chip .count { opacity: 0.7; margin-left: 3px; }
+
+  .sort-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 4px 10px; }
+  .sort-row select { width: auto; padding: 6px 10px; font-size: 12px; background: #0d0d0d; }
+  .sort-row .results-count { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #666; letter-spacing: 0.5px; }
+
+  .student-card { display: flex; align-items: center; gap: 10px; background: #0d0d0d; border: 1px solid #1e1e1e; border-radius: 10px; padding: 12px; margin-bottom: 8px; cursor: pointer; }
+  .pay-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .pay-dot.green { background: #00E676; }
+  .pay-dot.yellow { background: #FFD600; }
+  .pay-dot.red { background: #FF1744; }
+  .pay-dot.gray { background: #444; }
+  .avatar { width: 38px; height: 38px; border-radius: 50%; background: #1a1a1a; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 16px; flex-shrink: 0; }
+  .student-info { flex: 1; min-width: 0; }
+  .student-name { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .student-meta { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #888; margin-top: 2px; }
+  .mode-tags { display: flex; gap: 4px; margin-top: 4px; }
+  .mode-tag { font-family: 'Bebas Neue', sans-serif; font-size: 9px; letter-spacing: 1px; padding: 2px 5px; border-radius: 3px; background: #1a1a1a; color: #888; }
+  .mode-tag.clases { background: #2a2202; color: #FFD60A; }
+  .mode-tag.atletas { background: #0c1a14; color: #00E676; }
+
+  /* === BUTTONS === */
+  .btn-primary { background: #FFD60A; color: #080808; font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 1.5px; padding: 12px 16px; border-radius: 6px; }
+  .btn-secondary { background: #1a1a1a; color: #f0f0f0; font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 1px; padding: 10px 14px; border-radius: 6px; border: 1px solid #2a2a2a; }
+  .btn-danger { background: transparent; color: #FF1744; font-family: 'Bebas Neue', sans-serif; font-size: 12px; letter-spacing: 1px; padding: 8px 12px; border-radius: 6px; border: 1px solid #FF1744; }
+  .btn-add { background: #FFD60A; color: #080808; font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 1.5px; padding: 10px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; }
+
+  .header-row { display: flex; justify-content: space-between; align-items: center; padding: 0 4px; margin-bottom: 14px; }
+
+  /* === STUDENT DETAIL === */
+  #screen-detail .back-btn { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; color: #888; padding: 8px 4px; margin-bottom: 8px; }
+  .detail-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 0 4px; }
+  .detail-header .avatar { width: 48px; height: 48px; font-size: 20px; }
+  .detail-header h2 { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 1px; line-height: 1; }
+  .detail-header .sub { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #777; margin-top: 2px; }
+
+  .mode-switch { display: flex; background: #0d0d0d; border: 1px solid #1e1e1e; border-radius: 8px; padding: 3px; margin-bottom: 14px; }
+  .mode-switch button { flex: 1; padding: 10px 6px; font-family: 'Bebas Neue', sans-serif; font-size: 12px; letter-spacing: 1.5px; border-radius: 5px; color: #888; }
+  .mode-switch button.active { background: #FFD60A; color: #080808; }
+
+  .pay-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .pay-row > div { flex: 1; background: #0d0d0d; border: 1px solid #1e1e1e; border-radius: 8px; padding: 10px; }
+  .pay-row .lbl { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #888; margin-bottom: 2px; }
+  .pay-row .val { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1px; }
+  .pay-actions { display: flex; gap: 6px; margin-bottom: 14px; }
+  .pay-actions button { flex: 1; font-size: 11px; padding: 8px; }
+
+  /* === ROUTINE / EXERCISE === */
+  .routine-card { background: #0d0d0d; border: 1px solid #1e1e1e; border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+  .routine-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .day-tag { display: inline-block; font-family: 'Bebas Neue', sans-serif; font-size: 11px; letter-spacing: 1px; background: #1a1a1a; color: #FFD60A; padding: 3px 8px; border-radius: 3px; margin-bottom: 4px; }
+  .routine-name { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1px; line-height: 1; margin-bottom: 4px; }
+  .routine-muscles { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #777; }
+  .ex-line { padding: 6px 0; border-top: 1px solid #1a1a1a; font-size: 13px; }
+  .ex-line:first-of-type { border-top: none; }
+  .ex-line .ex-nm { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px; }
+  .ex-line .ex-sets { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #888; margin-top: 1px; }
+  .routine-actions { display: flex; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #1a1a1a; }
+  .routine-actions button { flex: 1; font-size: 11px; padding: 8px; }
+
+  /* === PR TABLE === */
+  .pr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .pr-cell { background: #0d0d0d; border: 1px solid #1e1e1e; border-radius: 8px; padding: 10px; cursor: pointer; }
+  .pr-cell .pr-name { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #aaa; }
+  .pr-cell .pr-val { font-family: 'Bebas Neue', sans-serif; font-size: 22px; line-height: 1; margin-top: 4px; color: #FFD60A; }
+  .pr-cell .pr-val.empty { color: #444; font-size: 14px; }
+  .pr-cell .pr-date { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #666; margin-top: 2px; }
+
+  /* === MODALS === */
+  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 100; display: flex; align-items: flex-end; justify-content: center; padding: 0; }
+  .modal { background: #0d0d0d; border-top: 1px solid #1e1e1e; border-radius: 16px 16px 0 0; padding: 18px 16px 24px; width: 100%; max-width: 430px; max-height: 90vh; overflow-y: auto; }
+  .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1px; }
+  .modal-close { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: #888; font-size: 18px; }
+  .modal .field-group { margin-bottom: 10px; }
+  .modal-actions { display: flex; gap: 8px; margin-top: 14px; }
+  .modal-actions button { flex: 1; padding: 12px; }
+
+  .ex-input-row { display: grid; grid-template-columns: 2fr 1fr 1fr 30px; gap: 6px; margin-bottom: 6px; align-items: center; }
+  .ex-input-row input { padding: 8px; font-size: 12px; }
+  .ex-input-row .del { color: #FF1744; font-size: 18px; text-align: center; padding: 0; background: transparent; border: none; }
+
+  /* === WOD === */
+  .wod-block { margin-bottom: 12px; }
+  .wod-block-title { font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 1.5px; color: #FFD60A; margin-bottom: 6px; }
+  .wod-block textarea { min-height: 70px; resize: vertical; font-size: 13px; line-height: 1.4; }
+
+  /* === BENCHMARKS === */
+  .bm-card { background: #0d0d0d; border: 1px solid #1e1e1e; border-radius: 10px; padding: 12px; margin-bottom: 8px; cursor: pointer; }
+  .bm-card .bm-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .bm-card .bm-name { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1px; color: #FFD60A; }
+  .bm-card .bm-cat { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #666; letter-spacing: 1px; text-transform: uppercase; }
+  .bm-card .bm-desc { font-size: 12px; color: #aaa; line-height: 1.4; }
+
+  /* === CLASSES === */
+  .class-row { display: flex; align-items: center; gap: 10px; background: #0d0d0d; border: 1px solid #1e1e1e; border-radius: 8px; padding: 12px; margin-bottom: 6px; }
+  .class-time { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 0.5px; width: 56px; color: #FFD60A; }
+  .class-info { flex: 1; }
+  .class-info .nm { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 13px; text-transform: uppercase; }
+  .class-info .cap { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #888; margin-top: 1px; }
+  .class-actions { display: flex; gap: 4px; }
+  .class-actions button { padding: 6px 8px; font-size: 10px; }
+
+  /* === %RM CALCULATOR === */
+  .rm-calc { background: #0d0d0d; border: 1px solid #1e1e1e; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+  .rm-calc-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 6px; }
+  .rm-result { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: #FFD60A; text-align: center; padding: 8px; background: #1a1602; border-radius: 6px; margin-top: 6px; }
+
+  /* === TOAST === */
+  .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: #FFD60A; color: #080808; padding: 10px 16px; border-radius: 6px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 0.5px; text-transform: uppercase; z-index: 200; box-shadow: 0 4px 12px rgba(0,0,0,0.5); animation: toastIn 0.3s ease; }
+  @keyframes toastIn { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+  .loading { text-align: center; padding: 40px 20px; color: #555; font-family: 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; font-size: 13px; }
+
+  /* Scrollbar oculto */
+  .modal::-webkit-scrollbar { width: 0; }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="login-screen">
+  <div class="logo">WOD<span>·</span>METHOD</div>
+  <div class="logo-sub">PANEL DEL COACH</div>
+  <div class="login-card">
+    <h2 id="login-title">INGRESAR</h2>
+    <div class="field-group">
+      <label>Email</label>
+      <input id="login-email" type="email" autocomplete="email" placeholder="tu@email.com">
+    </div>
+    <div class="field-group">
+      <label>Contraseña</label>
+      <input id="login-pass" type="password" autocomplete="current-password" placeholder="••••••••">
+    </div>
+    <div class="field-group" id="login-name-field" style="display:none">
+      <label>Tu nombre</label>
+      <input id="login-name" type="text" placeholder="Maxi Gardeñez">
+    </div>
+    <button class="btn-primary" id="btn-login">INGRESAR</button>
+    <button class="btn-secondary" id="btn-toggle-register">¿No tenés cuenta? Registrate</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app">
+  <div class="topbar">
+    <div class="brand">WOD<span>·</span>METHOD</div>
+    <button class="logout" id="btn-logout">SALIR</button>
+  </div>
+
+  <!-- MI DÍA -->
+  <div class="screen active" id="screen-day">
+    <div class="screen-title" id="day-greeting">BUEN DÍA 👋</div>
+    <div class="screen-sub" id="day-date">—</div>
+
+    <div class="card">
+      <div class="card-title">💪 HOY ENTRENAN</div>
+      <div id="today-trainees"><div class="empty-state">Cargando...</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📅 RESERVAS DE HOY</div>
+      <div id="today-bookings"><div class="empty-state">No hay clases hoy</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💳 PAGOS ESTA SEMANA</div>
+      <div id="week-payments"><div class="empty-state">Cargando...</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⚠ ALERTA DE FUGA</div>
+      <div id="dropout-alerts"><div class="empty-state">Cargando...</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 RESUMEN</div>
+      <div class="summary-grid">
+        <div class="summary-cell"><div class="num" id="sum-total">—</div><div class="lbl">Alumnos</div></div>
+        <div class="summary-cell"><div class="num" id="sum-active">—</div><div class="lbl">Activos sem.</div></div>
+        <div class="summary-cell"><div class="num" id="sum-checks">—</div><div class="lbl">Asist. 7d</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALUMNOS -->
+  <div class="screen" id="screen-students">
+    <div class="header-row">
+      <div>
+        <div class="screen-title">ALUMNOS</div>
+      </div>
+      <button class="btn-add" id="btn-new-student">+ ALUMNO</button>
+    </div>
+
+    <div class="search-bar">
+      <input id="search-students" type="text" placeholder="Buscar alumno...">
+      <button class="clear-search" id="clear-search">✕</button>
+    </div>
+
+    <div class="filter-chips" id="filter-chips">
+      <button class="chip active" data-filter="all">Todos <span class="count" id="count-all">0</span></button>
+      <button class="chip" data-filter="ok">Al día <span class="count" id="count-ok">0</span></button>
+      <button class="chip" data-filter="soon">Por vencer <span class="count" id="count-soon">0</span></button>
+      <button class="chip" data-filter="late">Vencidos <span class="count" id="count-late">0</span></button>
+    </div>
+
+    <div class="sort-row">
+      <select id="sort-students">
+        <option value="active">Más activos</option>
+        <option value="due">Por vencer pago</option>
+        <option value="alpha">Alfabético</option>
+        <option value="new">Más nuevos</option>
+      </select>
+      <span class="results-count" id="results-count"></span>
+    </div>
+
+    <div id="students-list"><div class="loading">Cargando...</div></div>
+  </div>
+
+  <!-- DETALLE ALUMNO -->
+  <div class="screen" id="screen-detail">
+    <button class="back-btn" id="btn-back-detail">← Volver</button>
+    <div class="detail-header">
+      <div class="avatar" id="detail-avatar"></div>
+      <div>
+        <h2 id="detail-name">—</h2>
+        <div class="sub" id="detail-sub">—</div>
+      </div>
+    </div>
+
+    <div class="mode-switch">
+      <button class="active" data-mode="atletas">ATLETAS</button>
+      <button data-mode="clases">CLASES</button>
+      <button data-mode="ambos">AMBOS</button>
+    </div>
+
+    <div class="pay-row">
+      <div><div class="lbl">Última cuota</div><div class="val" id="detail-last-pay">—</div></div>
+      <div><div class="lbl">Vence</div><div class="val" id="detail-due">—</div></div>
+    </div>
+    <div class="pay-actions">
+      <button class="btn-primary" id="btn-pay">💰 Registrar pago</button>
+      <button class="btn-secondary" id="btn-edit-due">📅 Editar venc.</button>
+    </div>
+
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <button class="btn-secondary" style="flex:1" id="btn-message">💬 Mensaje</button>
+      <button class="btn-secondary" style="flex:1" id="btn-edit-student">✏ Editar</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:14px">
+      <button class="btn-secondary" style="flex:1;font-size:11px" id="btn-reset-pass">🔑 Resetear contraseña</button>
+      <button class="btn-secondary" style="flex:1;font-size:11px" id="btn-create-auth">➕ Crear cuenta</button>
+    </div>
+
+    <!-- Sección ATLETAS -->
+    <div id="section-atletas">
+      <div class="card-title">RUTINAS</div>
+      <div id="routines-list"></div>
+      <button class="btn-add" id="btn-new-routine" style="margin-top:8px;width:100%;justify-content:center">+ NUEVA RUTINA</button>
+    </div>
+
+    <!-- Sección CLASES -->
+    <div id="section-clases" style="display:none">
+      <div class="card-title">PRs · LEVANTAMIENTOS</div>
+      <div class="pr-grid" id="prs-grid"></div>
+
+      <div class="card-title" style="margin-top:18px">BENCHMARKS PERSONALES</div>
+      <div id="benchmarks-personal"></div>
+    </div>
+
+    <button class="btn-danger" id="btn-delete-student" style="margin-top:30px;width:100%">🗑 ELIMINAR ALUMNO</button>
+  </div>
+
+  <!-- WOD DEL DÍA -->
+  <div class="screen" id="screen-wod">
+    <div class="screen-title">WOD DEL DÍA</div>
+    <div class="screen-sub" id="wod-date">—</div>
+
+    <div class="card">
+      <div class="field-group">
+        <label>Nombre del WOD (opcional)</label>
+        <input id="wod-name" placeholder='ej: "Fran"'>
+      </div>
+
+      <div class="wod-block">
+        <div class="wod-block-title">🔥 WARM UP</div>
+        <textarea id="wod-warmup" placeholder="3 rondas: 10 air squats + 10 push ups + 200m row"></textarea>
+      </div>
+
+      <div class="wod-block">
+        <div class="wod-block-title">💪 STRENGTH / SKILL</div>
+        <textarea id="wod-strength" placeholder="Back Squat 5x3 @ 80%"></textarea>
+      </div>
+
+      <div class="wod-block">
+        <div class="wod-block-title">⚡ METCON</div>
+        <textarea id="wod-metcon" placeholder="21-15-9 For Time: Thrusters · Pull-ups"></textarea>
+      </div>
+
+      <div class="wod-block">
+        <div class="wod-block-title">📊 ESCALAS</div>
+        <textarea id="wod-scales" placeholder="RX: 43kg / Sc: 30kg / Beg: 20kg + jumping pull-ups"></textarea>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn-primary" id="btn-save-wod" style="flex:1">💾 GUARDAR WOD</button>
+        <button class="btn-secondary" id="btn-load-bank" style="flex:1">📚 BANCO</button>
+      </div>
+    </div>
+
+    <!-- Calculadora %RM rápida -->
+    <div class="card">
+      <div class="card-title">🧮 CALCULADORA %RM</div>
+      <div class="rm-calc">
+        <div class="rm-calc-row">
+          <div>
+            <label>1RM (kg)</label>
+            <input id="calc-1rm" type="number" placeholder="100" step="0.5">
+          </div>
+          <div>
+            <label>Porcentaje</label>
+            <input id="calc-pct" type="number" placeholder="80" step="1">
+          </div>
+          <div style="display:flex;align-items:flex-end">
+            <button class="btn-secondary" id="btn-calc-rm" style="width:100%">CALCULAR</button>
+          </div>
+        </div>
+        <div class="rm-result" id="calc-result">— kg</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLASES -->
+  <div class="screen" id="screen-classes">
+    <div class="header-row">
+      <div><div class="screen-title">CLASES</div></div>
+      <button class="btn-add" id="btn-new-class">+ HORARIO</button>
+    </div>
+    <div class="screen-sub">Horarios y reservas del día</div>
+
+    <div class="card">
+      <div class="card-title">📅 HOY</div>
+      <div id="classes-today"><div class="empty-state">No hay clases creadas</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 TODOS LOS HORARIOS</div>
+      <div id="classes-all"><div class="empty-state">Sin horarios cargados</div></div>
+    </div>
+  </div>
+
+  <!-- BANCO -->
+  <div class="screen" id="screen-bank">
+    <div class="screen-title">BANCO</div>
+    <div class="screen-sub">WODs, rutinas y benchmarks guardados</div>
+
+    <div class="filter-chips">
+      <button class="chip active" data-bank="wods">WODs</button>
+      <button class="chip" data-bank="benchmarks">Benchmarks</button>
+      <button class="chip" data-bank="routines">Rutinas Atletas</button>
+    </div>
+
+    <div id="bank-content">
+      <button class="btn-add" id="btn-new-bank-item" style="width:100%;justify-content:center;margin-bottom:10px">+ AGREGAR</button>
+      <div id="bank-list"></div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="nav">
+    <button data-screen="day" class="active"><span class="ico">🏠</span>Mi día</button>
+    <button data-screen="students"><span class="ico">👥</span>Alumnos</button>
+    <button data-screen="wod"><span class="ico">⚡</span>WOD</button>
+    <button data-screen="classes"><span class="ico">📅</span>Clases</button>
+    <button data-screen="bank"><span class="ico">📚</span>Banco</button>
+  </nav>
+</div>
+
+<!-- Container modals -->
+<div id="modal-container"></div>
+
+<script>
+/* ================================================================
+   FIREBASE CONFIG — WOD METHOD
+================================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyDaL-qO8qSxawmSS01O6D51411fOM3OhGs",
+  authDomain: "wod-method.firebaseapp.com",
+  projectId: "wod-method",
+  storageBucket: "wod-method.firebasestorage.app",
+  messagingSenderId: "96776525666",
+  appId: "1:96776525666:web:0fd677fbf7fe965a883e3b"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// App secundaria para crear cuentas de alumnos sin desloguear al coach
+const secondaryApp = firebase.initializeApp(firebaseConfig, 'Secondary');
+const secondaryAuth = secondaryApp.auth();
+
+/* ================================================================
+   CONSTANTES
+================================================================= */
+const DAYS_ES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const MONTHS_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+const LIFTS = [
+  {id:'back_squat', name:'Back Squat', cat:'fuerza', unit:'kg'},
+  {id:'front_squat', name:'Front Squat', cat:'fuerza', unit:'kg'},
+  {id:'overhead_squat', name:'Overhead Squat', cat:'fuerza', unit:'kg'},
+  {id:'deadlift', name:'Deadlift', cat:'fuerza', unit:'kg'},
+  {id:'bench_press', name:'Bench Press', cat:'fuerza', unit:'kg'},
+  {id:'strict_press', name:'Strict Press', cat:'fuerza', unit:'kg'},
+  {id:'push_press', name:'Push Press', cat:'fuerza', unit:'kg'},
+  {id:'barbell_row', name:'Barbell Row', cat:'fuerza', unit:'kg'},
+  {id:'snatch', name:'Squat Snatch', cat:'olimpico', unit:'kg'},
+  {id:'power_snatch', name:'Power Snatch', cat:'olimpico', unit:'kg'},
+  {id:'hang_snatch', name:'Hang Snatch', cat:'olimpico', unit:'kg'},
+  {id:'clean', name:'Squat Clean', cat:'olimpico', unit:'kg'},
+  {id:'power_clean', name:'Power Clean', cat:'olimpico', unit:'kg'},
+  {id:'hang_clean', name:'Hang Clean', cat:'olimpico', unit:'kg'},
+  {id:'clean_jerk', name:'Clean & Jerk', cat:'olimpico', unit:'kg'},
+  {id:'split_jerk', name:'Split Jerk', cat:'olimpico', unit:'kg'},
+  {id:'pistol', name:'Pistol Squat', cat:'gimnastico', unit:'kg'},
+  {id:'pull_ups', name:'Pull Ups', cat:'gimnastico', unit:'reps'},
+  {id:'push_ups', name:'Push Ups', cat:'gimnastico', unit:'reps'},
+  {id:'muscle_up', name:'Muscle Ups', cat:'gimnastico', unit:'reps'},
+  {id:'hspu', name:'HSPU', cat:'gimnastico', unit:'reps'},
+  {id:'double_unders', name:'Double Unders', cat:'gimnastico', unit:'reps'}
+];
+
+const BENCHMARKS_GIRLS = [
+  {name:'Fran', cat:'girls', desc:'21-15-9 For Time: Thrusters (43/30kg) · Pull-ups'},
+  {name:'Helen', cat:'girls', desc:'3 RFT: 400m run · 21 KB swings (24/16kg) · 12 pull-ups'},
+  {name:'Grace', cat:'girls', desc:'30 reps For Time: Clean & Jerk (60/43kg)'},
+  {name:'Cindy', cat:'girls', desc:'AMRAP 20: 5 pull-ups · 10 push-ups · 15 air squats'},
+  {name:'Diane', cat:'girls', desc:'21-15-9 For Time: Deadlifts (102/70kg) · HSPU'},
+  {name:'Karen', cat:'girls', desc:'150 wall balls For Time (9/6kg, 10/9ft)'},
+  {name:'Annie', cat:'girls', desc:'50-40-30-20-10 For Time: Double-Unders · Sit-ups'},
+  {name:'Angie', cat:'girls', desc:'For Time: 100 pull-ups · 100 push-ups · 100 sit-ups · 100 squats'},
+  {name:'Barbara', cat:'girls', desc:'5 rondas: 20 pull-ups · 30 push-ups · 40 sit-ups · 50 squats (3 min descanso)'},
+  {name:'Chelsea', cat:'girls', desc:'EMOM 30: 5 pull-ups · 10 push-ups · 15 squats'},
+  {name:'Elizabeth', cat:'girls', desc:'21-15-9 For Time: Cleans (61/43kg) · Ring Dips'},
+  {name:'Isabel', cat:'girls', desc:'30 reps For Time: Snatch (61/43kg)'},
+  {name:'Jackie', cat:'girls', desc:'For Time: 1000m row · 50 thrusters (20kg) · 30 pull-ups'},
+  {name:'Kelly', cat:'girls', desc:'5 RFT: 400m run · 30 box jumps (24/20") · 30 wall balls'},
+  {name:'Linda', cat:'girls', desc:'10-9-8-7...1 For Time: Deadlift (1.5BW) · Bench (BW) · Clean (0.75BW)'},
+  {name:'Mary', cat:'girls', desc:'AMRAP 20: 5 HSPU · 10 pistols · 15 pull-ups'},
+  {name:'Nancy', cat:'girls', desc:'5 RFT: 400m run · 15 OHS (43/30kg)'}
+];
+
+const BENCHMARKS_HEROES = [
+  {name:'Murph', cat:'heroes', desc:'For Time (vest): 1mi run · 100 pull-ups · 200 push-ups · 300 squats · 1mi run'},
+  {name:'DT', cat:'heroes', desc:'5 RFT: 12 deadlifts · 9 hang power cleans · 6 push jerks (70/47.5kg)'},
+  {name:'JT', cat:'heroes', desc:'21-15-9 For Time: HSPU · Ring Dips · Push-ups'},
+  {name:'Chad', cat:'heroes', desc:'1000 box step-ups (20" / 20kg vest)'},
+  {name:'Michael', cat:'heroes', desc:'3 RFT: 800m run · 50 back ext · 50 sit-ups'},
+  {name:'Daniel', cat:'heroes', desc:'For Time: 50 pull-ups · 400m run · 21 thrusters (43kg) · 800m run · 21 thr · 400m · 50 pull-ups'},
+  {name:'Josh', cat:'heroes', desc:'21-15-9-... For Time: OHS (43kg) · Pull-ups (max set)'},
+  {name:'Jason', cat:'heroes', desc:'100 squats · 5 muscle-ups · 75 squats · 10 MU · 50 sq · 15 MU · 25 sq · 20 MU'},
+  {name:'Badger', cat:'heroes', desc:'3 RFT: 30 squat cleans (43kg) · 30 pull-ups · 800m run'},
+  {name:'Joshie', cat:'heroes', desc:'3 RFT: 21 DB snatch der + 21 izq + 21 L-pull-ups'},
+  {name:'Nate', cat:'heroes', desc:'AMRAP 20: 2 muscle-ups · 4 HSPU · 8 KB swings (32kg)'},
+  {name:'Randy', cat:'heroes', desc:'75 reps For Time: Power Snatch (34/25kg)'},
+  {name:'Tommy V', cat:'heroes', desc:'21-15-9 For Time: Thrusters (52kg) · Rope climbs'}
+];
+
+const BENCHMARKS_DEFAULT = [...BENCHMARKS_GIRLS, ...BENCHMARKS_HEROES];
+
+/* ================================================================
+   ESTADO GLOBAL
+================================================================= */
+let currentUser = null;
+let coachData = null;
+let students = [];
+let routinesByStudent = {};
+let currentDetailStudent = null;
+let currentDetailMode = 'atletas';
+let currentBankTab = 'wods';
+let activeFilter = 'all';
+let activeSort = 'active';
+let isRegisterMode = false;
+
+/* ================================================================
+   HELPERS
+================================================================= */
+function $(id) { return document.getElementById(id); }
+function show(id) { $(id).style.display = ''; }
+function hide(id) { $(id).style.display = 'none'; }
+function normalize(s) { return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+function todayStr() { const d = new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; }
+function parseAttDate(s) { if(!s) return null; const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); }
+function fmtDate(d) { if(!d) return '—'; if(typeof d==='string') d=parseAttDate(d); return `${d.getDate()} ${MONTHS_ES[d.getMonth()].substring(0,3)}`; }
+function daysBetween(a, b) { return Math.floor((b - a) / 86400000); }
+
+function toast(msg, ms=2000) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), ms);
+}
+
+function avatarFor(name) {
+  return (name || '?').trim().charAt(0).toUpperCase();
+}
+
+function payDotClass(due) {
+  if (!due) return 'gray';
+  const d = parseAttDate(due);
+  const diff = daysBetween(new Date(), d);
+  if (diff < 0) return 'red';
+  if (diff <= 7) return 'yellow';
+  return 'green';
+}
+
+/* ================================================================
+   AUTH
+================================================================= */
+$('btn-toggle-register').onclick = () => {
+  isRegisterMode = !isRegisterMode;
+  $('login-title').textContent = isRegisterMode ? 'CREAR CUENTA' : 'INGRESAR';
+  $('btn-login').textContent = isRegisterMode ? 'REGISTRARME' : 'INGRESAR';
+  $('btn-toggle-register').textContent = isRegisterMode ? 'Ya tengo cuenta — Ingresar' : '¿No tenés cuenta? Registrate';
+  $('login-name-field').style.display = isRegisterMode ? '' : 'none';
+  $('login-error').textContent = '';
+};
+
+$('btn-login').onclick = async () => {
+  const email = $('login-email').value.trim();
+  const pass = $('login-pass').value;
+  const err = $('login-error');
+  err.textContent = '';
+  if (!email || !pass) { err.textContent = 'Completá email y contraseña'; return; }
+  try {
+    if (isRegisterMode) {
+      const name = $('login-name').value.trim() || 'Coach';
+      const cred = await auth.createUserWithEmailAndPassword(email, pass);
+      await db.collection('coaches').doc(cred.user.uid).set({
+        name,
+        email,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } else {
+      await auth.signInWithEmailAndPassword(email, pass);
+    }
+  } catch (e) {
+    const msg = e.code === 'auth/wrong-password' ? 'Contraseña incorrecta'
+      : e.code === 'auth/user-not-found' ? 'No existe esa cuenta'
+      : e.code === 'auth/email-already-in-use' ? 'Ese email ya está registrado'
+      : e.code === 'auth/weak-password' ? 'La contraseña debe tener 6+ caracteres'
+      : e.code === 'auth/invalid-email' ? 'Email inválido'
+      : e.message;
+    err.textContent = msg;
+  }
+};
+
+$('btn-logout').onclick = () => auth.signOut();
+
+auth.onAuthStateChanged(async user => {
+  if (user) {
+    currentUser = user;
+    try {
+      const doc = await db.collection('coaches').doc(user.uid).get();
+      coachData = doc.exists ? doc.data() : { name: user.email.split('@')[0], email: user.email };
+      hide('login-screen'); show('app');
+      $('app').style.display = 'block';
+      initApp();
+    } catch (e) {
+      $('login-error').textContent = 'Error cargando datos: ' + e.message;
+    }
+  } else {
+    currentUser = null; coachData = null; students = []; routinesByStudent = {};
+    show('login-screen'); hide('app');
+  }
+});
+
+/* ================================================================
+   NAV
+================================================================= */
+document.querySelectorAll('.nav button').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('.nav button').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    $('screen-' + b.dataset.screen).classList.add('active');
+    if (b.dataset.screen === 'wod') loadTodayWod();
+    if (b.dataset.screen === 'classes') loadClasses();
+    if (b.dataset.screen === 'bank') renderBank();
+    if (b.dataset.screen === 'day') loadDayScreen();
+    window.scrollTo(0, 0);
+  };
+});
+
+/* ================================================================
+   INIT APP
+================================================================= */
+async function initApp() {
+  greetByDay();
+  await loadStudents();
+  loadDayScreen();
+}
+
+function greetByDay() {
+  const d = new Date();
+  const dayName = DAYS_ES[d.getDay()];
+  const dateStr = `${dayName} ${d.getDate()} de ${MONTHS_ES[d.getMonth()]}`;
+  $('day-greeting').textContent = `Buen día, ${coachData.name} 👋`;
+  $('day-date').textContent = dateStr.toUpperCase();
+  $('wod-date').textContent = dateStr.toUpperCase();
+}
+
+/* ================================================================
+   STUDENTS
+================================================================= */
+async function loadStudents() {
+  try {
+    const snap = await db.collection('students')
+      .where('coachId', '==', currentUser.uid)
+      .get();
+    students = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // cargar rutinas en background
+    loadAllRoutines();
+    renderStudents();
+  } catch (e) {
+    console.error(e);
+    $('students-list').innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+  }
+}
+
+async function loadAllRoutines() {
+  for (const s of students) {
+    try {
+      const snap = await db.collection('students').doc(s.id).collection('routines').get();
+      routinesByStudent[s.id] = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(r => r.status !== 'archived');
+    } catch (e) { routinesByStudent[s.id] = []; }
+  }
+}
+
+function getFilteredStudents() {
+  const q = normalize($('search-students').value);
+  let arr = students.slice();
+  if (q) arr = arr.filter(s => normalize(s.name).includes(q));
+
+  const today = new Date();
+  if (activeFilter === 'ok') arr = arr.filter(s => {
+    if (!s.paymentDue) return false;
+    return daysBetween(today, parseAttDate(s.paymentDue)) > 7;
+  });
+  if (activeFilter === 'soon') arr = arr.filter(s => {
+    if (!s.paymentDue) return false;
+    const d = daysBetween(today, parseAttDate(s.paymentDue));
+    return d >= 0 && d <= 7;
+  });
+  if (activeFilter === 'late') arr = arr.filter(s => {
+    if (!s.paymentDue) return false;
+    return daysBetween(today, parseAttDate(s.paymentDue)) < 0;
+  });
+
+  if (activeSort === 'alpha') arr.sort((a,b) => a.name.localeCompare(b.name));
+  else if (activeSort === 'new') arr.sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+  else if (activeSort === 'due') arr.sort((a,b) => {
+    const da = a.paymentDue ? parseAttDate(a.paymentDue).getTime() : Infinity;
+    const dbb = b.paymentDue ? parseAttDate(b.paymentDue).getTime() : Infinity;
+    return da - dbb;
+  });
+  else arr.sort((a,b) => {
+    const la = a.lastAttendance ? parseAttDate(a.lastAttendance).getTime() : 0;
+    const lb = b.lastAttendance ? parseAttDate(b.lastAttendance).getTime() : 0;
+    return lb - la;
+  });
+
+  return arr;
+}
+
+function renderStudents() {
+  const list = $('students-list');
+  const arr = getFilteredStudents();
+
+  // Counts
+  const today = new Date();
+  let cAll = students.length, cOk = 0, cSoon = 0, cLate = 0;
+  students.forEach(s => {
+    if (!s.paymentDue) return;
+    const d = daysBetween(today, parseAttDate(s.paymentDue));
+    if (d < 0) cLate++;
+    else if (d <= 7) cSoon++;
+    else cOk++;
+  });
+  $('count-all').textContent = cAll;
+  $('count-ok').textContent = cOk;
+  $('count-soon').textContent = cSoon;
+  $('count-late').textContent = cLate;
+
+  if (activeFilter !== 'all' || $('search-students').value) {
+    $('results-count').textContent = `${arr.length} de ${students.length}`;
+  } else $('results-count').textContent = '';
+
+  if (!arr.length) { list.innerHTML = '<div class="empty-state">Sin alumnos</div>'; return; }
+
+  list.innerHTML = arr.map(s => {
+    const dot = payDotClass(s.paymentDue);
+    const modes = [];
+    if (s.mode === 'clases' || s.mode === 'ambos') modes.push('<span class="mode-tag clases">CLASES</span>');
+    if (s.mode === 'atletas' || s.mode === 'ambos' || !s.mode) modes.push('<span class="mode-tag atletas">ATLETAS</span>');
+    return `
+      <div class="student-card" data-id="${s.id}">
+        <span class="pay-dot ${dot}"></span>
+        <div class="avatar" style="background:${s.color || '#1a1a1a'}">${avatarFor(s.name)}</div>
+        <div class="student-info">
+          <div class="student-name">${s.name}</div>
+          <div class="student-meta">${s.objective || '—'}</div>
+          <div class="mode-tags">${modes.join('')}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  list.querySelectorAll('.student-card').forEach(c => {
+    c.onclick = () => openStudentDetail(c.dataset.id);
+  });
+}
+
+$('search-students').oninput = renderStudents;
+$('clear-search').onclick = () => { $('search-students').value = ''; renderStudents(); };
+$('sort-students').onchange = (e) => { activeSort = e.target.value; renderStudents(); };
+document.querySelectorAll('#filter-chips .chip').forEach(c => {
+  c.onclick = () => {
+    document.querySelectorAll('#filter-chips .chip').forEach(x => x.classList.remove('active'));
+    c.classList.add('active');
+    activeFilter = c.dataset.filter;
+    renderStudents();
+  };
+});
+
+/* ================================================================
+   NEW STUDENT
+================================================================= */
+$('btn-new-student').onclick = () => {
+  openModal('Nuevo Alumno', `
+    <div class="field-group"><label>Nombre *</label><input id="ns-name" placeholder="Juan Pérez"></div>
+    <div class="field-group"><label>Edad</label><input id="ns-age" type="number" placeholder="28"></div>
+    <div class="field-group"><label>Objetivo</label><input id="ns-obj" placeholder="Bajar de peso"></div>
+    <div class="field-group"><label>Email del alumno *</label><input id="ns-email" type="email" placeholder="alumno@email.com"></div>
+    <div class="field-group"><label>Contraseña inicial *</label><input id="ns-pass" type="text" placeholder="mínimo 6 caracteres" value="wodmethod123"></div>
+    <div class="field-group"><label>Modalidad</label>
+      <select id="ns-mode">
+        <option value="atletas">Atletas (rutina personal)</option>
+        <option value="clases">Clases (CrossFit)</option>
+        <option value="ambos">Ambos</option>
+      </select>
+    </div>
+    <div class="field-group"><label>Color</label><input id="ns-color" type="color" value="#FFD60A" style="height:42px"></div>
+    <div style="font-size:11px;color:#888;margin-top:8px;line-height:1.4">💡 La contraseña se va a usar para que el alumno entre a su app. Decísela vos o usá la sugerida.</div>
+  `, async () => {
+    const name = $('ns-name').value.trim();
+    const email = $('ns-email').value.trim();
+    const pass = $('ns-pass').value;
+    if (!name || !email) { toast('Falta nombre/email'); return false; }
+    if (!pass || pass.length < 6) { toast('Contraseña: mínimo 6 caracteres'); return false; }
+    try {
+      // 1. Crear cuenta de Auth con app secundaria (no desloguea al coach)
+      await secondaryAuth.createUserWithEmailAndPassword(email, pass);
+      await secondaryAuth.signOut();
+
+      // 2. Crear documento en Firestore
+      await db.collection('students').add({
+        coachId: currentUser.uid,
+        name, email,
+        age: parseInt($('ns-age').value)||null,
+        objective: $('ns-obj').value.trim(),
+        mode: $('ns-mode').value,
+        color: $('ns-color').value,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      toast('Alumno creado ✓ — Compartile email + contraseña');
+      await loadStudents();
+      return true;
+    } catch (e) {
+      const msg = e.code === 'auth/email-already-in-use' ? 'Ese email ya tiene cuenta. Si el alumno olvidó la contraseña, usá "Resetear contraseña" desde el detalle.'
+        : e.code === 'auth/invalid-email' ? 'Email inválido'
+        : e.code === 'auth/weak-password' ? 'La contraseña tiene que ser de al menos 6 caracteres'
+        : 'Error: '+e.message;
+      toast(msg);
+      return false;
+    }
+  });
+};
+
+/* ================================================================
+   STUDENT DETAIL
+================================================================= */
+async function openStudentDetail(id) {
+  currentDetailStudent = students.find(s => s.id === id);
+  if (!currentDetailStudent) return;
+  const s = currentDetailStudent;
+  $('detail-name').textContent = s.name;
+  $('detail-sub').textContent = `${s.objective || '—'} · ${s.age ? s.age+' años' : ''}`;
+  $('detail-avatar').textContent = avatarFor(s.name);
+  $('detail-avatar').style.background = s.color || '#1a1a1a';
+  $('detail-last-pay').textContent = s.lastPayment ? fmtDate(s.lastPayment) : '—';
+  $('detail-due').textContent = s.paymentDue ? fmtDate(s.paymentDue) : '—';
+
+  // setear modo según el alumno
+  const mode = s.mode || 'atletas';
+  currentDetailMode = mode === 'ambos' ? 'atletas' : mode;
+  document.querySelectorAll('.mode-switch button').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === currentDetailMode);
+  });
+
+  document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
+  $('screen-detail').classList.add('active');
+  document.querySelectorAll('.nav button').forEach(x => x.classList.remove('active'));
+
+  renderDetailMode();
+  await loadStudentRoutines();
+  await loadStudentPRs();
+  window.scrollTo(0,0);
+}
+
+document.querySelectorAll('.mode-switch button').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('.mode-switch button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    currentDetailMode = b.dataset.mode;
+    renderDetailMode();
+  };
+});
+
+function renderDetailMode() {
+  if (currentDetailMode === 'atletas') {
+    show('section-atletas'); hide('section-clases');
+  } else if (currentDetailMode === 'clases') {
+    hide('section-atletas'); show('section-clases');
+  } else {
+    show('section-atletas'); show('section-clases');
+  }
+}
+
+$('btn-back-detail').onclick = () => {
+  document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
+  $('screen-students').classList.add('active');
+  document.querySelector('.nav button[data-screen="students"]').classList.add('active');
+};
+
+async function loadStudentRoutines() {
+  try {
+    const snap = await db.collection('students').doc(currentDetailStudent.id).collection('routines').get();
+    const routines = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(r => r.status !== 'archived');
+    const html = routines.length ? routines.map(r => `
+      <div class="routine-card" data-rid="${r.id}">
+        <div class="routine-head">
+          <div>
+            <span class="day-tag">${r.day || '—'}</span>
+            <div class="routine-name">${r.name || 'Sin nombre'}</div>
+            <div class="routine-muscles">${(r.muscles||[]).join(' · ')}</div>
+          </div>
+        </div>
+        ${(r.exercises||[]).map(e => `
+          <div class="ex-line">
+            <div class="ex-nm">${e.name}</div>
+            <div class="ex-sets">${e.sets||'—'} ${e.reps?'x '+e.reps:''} ${e.weight?'· '+e.weight:''}</div>
+          </div>
+        `).join('')}
+        <div class="routine-actions">
+          <button class="btn-secondary btn-edit-routine" data-rid="${r.id}">✏ EDITAR</button>
+          <button class="btn-danger btn-del-routine" data-rid="${r.id}">🗑</button>
+        </div>
+      </div>
+    `).join('') : '<div class="empty-state">Sin rutinas</div>';
+    $('routines-list').innerHTML = html;
+    $('routines-list').querySelectorAll('.btn-del-routine').forEach(b => {
+      b.onclick = async (e) => {
+        e.stopPropagation();
+        if (!confirm('¿Eliminar rutina?')) return;
+        await db.collection('students').doc(currentDetailStudent.id).collection('routines').doc(b.dataset.rid).delete();
+        loadStudentRoutines();
+      };
+    });
+  } catch (e) {
+    $('routines-list').innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+  }
+}
+
+async function loadStudentPRs() {
+  try {
+    const snap = await db.collection('students').doc(currentDetailStudent.id).collection('prs').get();
+    const prMap = {};
+    snap.docs.forEach(d => prMap[d.id] = d.data());
+
+    $('prs-grid').innerHTML = LIFTS.map(l => {
+      const pr = prMap[l.id];
+      return `
+        <div class="pr-cell" data-lift="${l.id}">
+          <div class="pr-name">${l.name}</div>
+          <div class="pr-val ${pr ? '' : 'empty'}">${pr ? `${pr.value} ${l.unit}` : '— —'}</div>
+          ${pr && pr.date ? `<div class="pr-date">${fmtDate(pr.date)}</div>` : ''}
+        </div>
+      `;
+    }).join('');
+
+    $('prs-grid').querySelectorAll('.pr-cell').forEach(c => {
+      c.onclick = () => editPR(c.dataset.lift);
+    });
+
+    // Benchmarks personales
+    const bmSnap = await db.collection('students').doc(currentDetailStudent.id).collection('benchmarks').get();
+    const bmMap = {};
+    bmSnap.docs.forEach(d => bmMap[d.id] = d.data());
+
+    $('benchmarks-personal').innerHTML = BENCHMARKS_DEFAULT.slice(0, 8).map(b => {
+      const rec = bmMap[normalize(b.name).replace(/\s/g,'_')];
+      return `
+        <div class="bm-card" data-bm="${b.name}">
+          <div class="bm-head">
+            <div class="bm-name">${b.name}</div>
+            <div class="bm-cat">${b.cat}</div>
+          </div>
+          <div class="bm-desc">${b.desc}</div>
+          <div style="margin-top:6px;font-family:'JetBrains Mono',monospace;font-size:11px;color:${rec?'#FFD60A':'#444'}">
+            ${rec ? `Mejor: ${rec.value} ${rec.unit||''} · ${fmtDate(rec.date)}` : 'Sin registrar'}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    $('benchmarks-personal').querySelectorAll('.bm-card').forEach(c => {
+      c.onclick = () => editBenchmark(c.dataset.bm);
+    });
+  } catch (e) {
+    $('prs-grid').innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+  }
+}
+
+function editPR(liftId) {
+  const lift = LIFTS.find(l => l.id === liftId);
+  openModal(`PR · ${lift.name}`, `
+    <div class="field-group">
+      <label>Valor (${lift.unit})</label>
+      <input id="pr-value" type="number" step="0.5" placeholder="100">
+    </div>
+    <div class="field-group">
+      <label>Fecha</label>
+      <input id="pr-date" type="date" value="${todayStr().split('-').map((p,i)=>i?p.padStart(2,'0'):p).join('-')}">
+    </div>
+    <div class="field-group"><label>Notas</label><textarea id="pr-note" placeholder="Notas..."></textarea></div>
+  `, async () => {
+    const val = parseFloat($('pr-value').value);
+    if (isNaN(val)) { toast('Valor inválido'); return false; }
+    const date = $('pr-date').value || todayStr();
+    try {
+      await db.collection('students').doc(currentDetailStudent.id).collection('prs').doc(liftId).set({
+        value: val, date, note: $('pr-note').value, unit: lift.unit, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+      toast('PR guardado ✓');
+      loadStudentPRs();
+      return true;
+    } catch (e) { toast('Error: '+e.message); return false; }
+  });
+}
+
+function editBenchmark(name) {
+  const bm = BENCHMARKS_DEFAULT.find(b => b.name === name);
+  const docId = normalize(name).replace(/\s/g,'_');
+  openModal(`Benchmark · ${name}`, `
+    <div style="font-size:13px;color:#aaa;margin-bottom:12px">${bm.desc}</div>
+    <div class="field-group"><label>Tu mejor (tiempo o reps)</label><input id="bm-value" placeholder='6:42 · 215 reps · 102kg'></div>
+    <div class="field-group"><label>Fecha</label><input id="bm-date" type="date"></div>
+    <div class="field-group"><label>Escala</label>
+      <select id="bm-scale"><option>RX</option><option>Scaled</option><option>Beginner</option></select>
+    </div>
+    <div class="field-group"><label>Notas</label><textarea id="bm-note"></textarea></div>
+  `, async () => {
+    const val = $('bm-value').value.trim();
+    if (!val) { toast('Falta valor'); return false; }
+    try {
+      await db.collection('students').doc(currentDetailStudent.id).collection('benchmarks').doc(docId).set({
+        name, value: val, date: $('bm-date').value || todayStr(),
+        scale: $('bm-scale').value, note: $('bm-note').value,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+      toast('Benchmark guardado ✓');
+      loadStudentPRs();
+      return true;
+    } catch (e) { toast('Error: '+e.message); return false; }
+  });
+}
+
+/* ================================================================
+   PAYMENTS
+================================================================= */
+$('btn-pay').onclick = () => {
+  const due = new Date(); due.setDate(due.getDate()+30);
+  const dueStr = due.toISOString().substring(0,10);
+  openModal('Registrar pago', `
+    <div class="field-group"><label>Monto ($)</label><input id="pay-amount" type="number" placeholder="25000"></div>
+    <div class="field-group"><label>Próximo vencimiento</label><input id="pay-due" type="date" value="${dueStr}"></div>
+  `, async () => {
+    const amount = parseFloat($('pay-amount').value);
+    if (isNaN(amount)) { toast('Monto inválido'); return false; }
+    const newDue = $('pay-due').value;
+    const [y,m,d] = newDue.split('-').map(Number);
+    const dueFmt = `${y}-${m}-${d}`;
+    try {
+      await db.collection('students').doc(currentDetailStudent.id).update({
+        lastPayment: todayStr(),
+        paymentDue: dueFmt,
+        lastPaymentAmount: amount
+      });
+      toast('Pago registrado ✓');
+      currentDetailStudent.lastPayment = todayStr();
+      currentDetailStudent.paymentDue = dueFmt;
+      $('detail-last-pay').textContent = fmtDate(todayStr());
+      $('detail-due').textContent = fmtDate(dueFmt);
+      await loadStudents();
+      return true;
+    } catch (e) { toast('Error: '+e.message); return false; }
+  });
+};
+
+$('btn-edit-due').onclick = () => {
+  openModal('Editar vencimiento', `
+    <div class="field-group"><label>Nueva fecha</label><input id="due-date" type="date" value="${currentDetailStudent.paymentDue||''}"></div>
+  `, async () => {
+    const v = $('due-date').value;
+    if (!v) { toast('Falta fecha'); return false; }
+    const [y,m,d] = v.split('-').map(Number);
+    const dueFmt = `${y}-${m}-${d}`;
+    try {
+      await db.collection('students').doc(currentDetailStudent.id).update({ paymentDue: dueFmt });
+      currentDetailStudent.paymentDue = dueFmt;
+      $('detail-due').textContent = fmtDate(dueFmt);
+      toast('Vencimiento actualizado ✓');
+      await loadStudents();
+      return true;
+    } catch (e) { toast('Error: '+e.message); return false; }
+  });
+};
+
+$('btn-edit-student').onclick = () => {
+  const s = currentDetailStudent;
+  openModal('Editar alumno', `
+    <div class="field-group"><label>Nombre</label><input id="es-name" value="${s.name||''}"></div>
+    <div class="field-group"><label>Edad</label><input id="es-age" type="number" value="${s.age||''}"></div>
+    <div class="field-group"><label>Objetivo</label><input id="es-obj" value="${s.objective||''}"></div>
+    <div class="field-group"><label>Modalidad</label>
+      <select id="es-mode">
+        <option value="atletas" ${s.mode==='atletas'?'selected':''}>Atletas</option>
+        <option value="clases" ${s.mode==='clases'?'selected':''}>Clases</option>
+        <option value="ambos" ${s.mode==='ambos'?'selected':''}>Ambos</option>
+      </select>
+    </div>
+    <div class="field-group"><label>Color</label><input id="es-color" type="color" value="${s.color||'#FFD60A'}" style="height:42px"></div>
+  `, async () => {
+    try {
+      await db.collection('students').doc(s.id).update({
+        name: $('es-name').value.trim() || s.name,
+        age: parseInt($('es-age').value)||null,
+        objective: $('es-obj').value.trim(),
+        mode: $('es-mode').value,
+        color: $('es-color').value
+      });
+      toast('Alumno actualizado ✓');
+      await loadStudents();
+      currentDetailStudent = students.find(x => x.id === s.id);
+      openStudentDetail(s.id);
+      return true;
+    } catch (e) { toast('Error: '+e.message); return false; }
+  });
+};
+
+$('btn-message').onclick = () => {
+  openModal('Mensaje al alumno', `
+    <div class="field-group"><label>Mensaje (lo verá en su app)</label><textarea id="msg-text" placeholder="¡Buen entrenamiento hoy!" style="min-height:100px">${currentDetailStudent.coachMessage||''}</textarea></div>
+  `, async () => {
+    try {
+      await db.collection('students').doc(currentDetailStudent.id).update({
+        coachMessage: $('msg-text').value,
+        coachMessageAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      toast('Mensaje enviado ✓');
+      return true;
+    } catch (e) { toast('Error: '+e.message); return false; }
+  });
+};
+
+$('btn-delete-student').onclick = async () => {
+  if (!confirm(`¿ELIMINAR a ${currentDetailStudent.name}? Se borran rutinas, PRs y datos. No se puede deshacer.`)) return;
+  try {
+    await db.collection('students').doc(currentDetailStudent.id).delete();
+    toast('Alumno eliminado');
+    await loadStudents();
+    $('btn-back-detail').click();
+  } catch (e) { toast('Error: '+e.message); }
+};
+
+// Resetear contraseña — manda mail al alumno
+$('btn-reset-pass').onclick = async () => {
+  const email = currentDetailStudent.email;
+  if (!email) { toast('El alumno no tiene email cargado'); return; }
+  if (!confirm(`¿Mandar mail de reseteo de contraseña a ${email}?\n\nEl alumno va a recibir un link para crear nueva contraseña.`)) return;
+  try {
+    await auth.sendPasswordResetEmail(email);
+    toast('Mail enviado ✓ — Avisale al alumno que revise su correo');
+  } catch (e) {
+    const msg = e.code === 'auth/user-not-found' ? 'Este alumno no tiene cuenta creada todavía. Usá "Crear cuenta" en su lugar.'
+      : 'Error: '+e.message;
+    toast(msg);
+  }
+};
+
+// Crear cuenta de Auth para alumno existente (que se cargó antes de la mejora)
+$('btn-create-auth').onclick = () => {
+  const email = currentDetailStudent.email;
+  if (!email) { toast('El alumno no tiene email cargado. Editalo primero.'); return; }
+  openModal('Crear cuenta de acceso', `
+    <div style="font-size:13px;color:#aaa;margin-bottom:12px;line-height:1.5">
+      Vamos a crear la cuenta de <strong style="color:#FFD60A">${email}</strong> en el sistema para que el alumno pueda entrar a su app.
+    </div>
+    <div class="field-group">
+      <label>Contraseña inicial *</label>
+      <input id="ca-pass" type="text" value="wodmethod123" placeholder="mínimo 6 caracteres">
+    </div>
+    <div style="font-size:11px;color:#888;line-height:1.4;margin-top:6px">
+      💡 Después compartile email + contraseña al alumno. Él va a poder cambiarla cuando quiera.
+    </div>
+  `, async () => {
+    const pass = $('ca-pass').value;
+    if (!pass || pass.length < 6) { toast('Contraseña: mínimo 6 caracteres'); return false; }
+    try {
+      await secondaryAuth.createUserWithEmailAndPassword(email, pass);
+      await secondaryAuth.signOut();
+      toast('Cuenta creada ✓ — Compartile email + contraseña');
+      return true;
+    } catch (e) {
+      const msg = e.code === 'auth/email-already-in-use' ? 'Este alumno ya tiene cuenta. Usá "Resetear contraseña" en su lugar.'
+        : e.code === 'auth/invalid-email' ? 'Email inválido'
+        : 'Error: '+e.message;
+      toast(msg);
+      return false;
+    }
+  });
+};
+
+/* ================================================================
+   ROUTINES MODAL
+================================================================= */
+$('btn-new-routine').onclick = () => openRoutineModal();
+
+function openRoutineModal(existing) {
+  const exHtml = (existing?.exercises || [{name:'',sets:'',reps:'',weight:''}]).map((e,i) => exRow(e,i)).join('');
+  openModal(existing ? 'Editar Rutina' : 'Nueva Rutina', `
+    <div class="field-group"><label>Día</label>
+      <select id="r-day">
+        ${['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'].map(d => `<option ${existing?.day===d?'selected':''}>${d}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field-group"><label>Nombre</label><input id="r-name" placeholder="Pecho + hombro" value="${existing?.name||''}"></div>
+    <div class="field-group"><label>Grupos musculares (separados por coma)</label><input id="r-muscles" placeholder="Pecho, hombro" value="${(existing?.muscles||[]).join(', ')}"></div>
+    <div class="field-group">
+      <label>Ejercicios</label>
+      <div id="ex-list">${exHtml}</div>
+      <button class="btn-secondary" id="add-ex" style="margin-top:6px;width:100%">+ AGREGAR EJERCICIO</button>
+    </div>
+  `, async () => {
+    const exercises = [];
+    document.querySelectorAll('#ex-list .ex-input-row').forEach(row => {
+      const inputs = row.querySelectorAll('input');
+      const name = inputs[0].value.trim();
+      if (!name) return;
+      exercises.push({
+        name, sets: inputs[1].value.trim(), reps: inputs[2].value.trim(), weight: inputs[3].value.trim()
+      });
+    });
+    if (!exercises.length) { toast('Agregá al menos un ejercicio'); return false; }
+    const data = {
+      day: $('r-day').value,
+      name: $('r-name').value.trim() || 'Rutina',
+      muscles: $('r-muscles').value.split(',').map(s => s.trim()).filter(Boolean),
+      exercises,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    try {
+      const ref = db.collection('students').doc(currentDetailStudent.id).collection('routines');
+      if (existing) await ref.doc(existing.id).update(data);
+      else await ref.add({...data, createdAt: firebase.firestore.FieldValue.serverTimestamp()});
+      toast('Rutina guardada ✓');
+      loadStudentRoutines();
+      return true;
+    } catch (e) { toast('Error: '+e.message); return false; }
+  });
+
+  setTimeout(() => {
+    $('add-ex').onclick = () => {
+      const div = document.createElement('div');
+      div.innerHTML = exRow({name:'',sets:'',reps:'',weight:''}, document.querySelectorAll('#ex-list .ex-input-row').length);
+      $('ex-list').appendChild(div.firstElementChild);
+      attachExDelete();
+    };
+    attachExDelete();
+  }, 100);
+}
+
+function exRow(e) {
+  return `<div class="ex-input-row">
+    <input placeholder="Ejercicio" value="${e.name||''}">
+    <input placeholder="Sets" value="${e.sets||''}">
+    <input placeholder="Reps" value="${e.reps||''}">
+    <button class="del">×</button>
+  </div>`;
+}
+function attachExDelete() {
+  document.querySelectorAll('#ex-list .del').forEach(b => {
+    b.onclick = () => { if (document.querySelectorAll('#ex-list .ex-input-row').length>1) b.parentElement.remove(); };
+  });
+}
+
+/* ================================================================
+   WOD DEL DÍA
+================================================================= */
+async function loadTodayWod() {
+  const date = todayStr();
+  try {
+    const doc = await db.collection('coaches').doc(currentUser.uid).collection('wods').doc(date).get();
+    if (doc.exists) {
+      const d = doc.data();
+      $('wod-name').value = d.name || '';
+      $('wod-warmup').value = d.warmup || '';
+      $('wod-strength').value = d.strength || '';
+      $('wod-metcon').value = d.metcon || '';
+      $('wod-scales').value = d.scales || '';
+    } else {
+      $('wod-name').value = ''; $('wod-warmup').value = '';
+      $('wod-strength').value = ''; $('wod-metcon').value = ''; $('wod-scales').value = '';
+    }
+  } catch (e) { toast('Error WOD: '+e.message); }
+}
+
+$('btn-save-wod').onclick = async () => {
+  try {
+    await db.collection('coaches').doc(currentUser.uid).collection('wods').doc(todayStr()).set({
+      name: $('wod-name').value.trim(),
+      warmup: $('wod-warmup').value.trim(),
+      strength: $('wod-strength').value.trim(),
+      metcon: $('wod-metcon').value.trim(),
+      scales: $('wod-scales').value.trim(),
+      date: todayStr(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    toast('WOD guardado ✓');
+  } catch (e) { toast('Error: '+e.message); }
+};
+
+$('btn-load-bank').onclick = async () => {
+  try {
+    const snap = await db.collection('coaches').doc(currentUser.uid).collection('wods_bank').get();
+    const banco = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const allWods = [...banco, ...BENCHMARKS_DEFAULT.map(b => ({
+      name: b.name, metcon: b.desc, isBenchmark: true, cat: b.cat
+    }))];
+    openModal('Cargar desde Banco', `
+      <div style="max-height:60vh;overflow-y:auto">
+        ${allWods.length ? allWods.map((w,i) => `
+          <div class="bm-card" data-idx="${i}">
+            <div class="bm-head">
+              <div class="bm-name">${w.name||'Sin nombre'}</div>
+              ${w.cat ? `<div class="bm-cat">${w.cat}</div>` : ''}
+            </div>
+            <div class="bm-desc">${w.metcon || w.warmup || '—'}</div>
+          </div>
+        `).join('') : '<div class="empty-state">Sin WODs guardados</div>'}
+      </div>
+    `, null, 'Cerrar');
+    setTimeout(() => {
+      document.querySelectorAll('#modal-container .bm-card').forEach(c => {
+        c.onclick = () => {
+          const w = allWods[parseInt(c.dataset.idx)];
+          $('wod-name').value = w.name || '';
+          $('wod-warmup').value = w.warmup || '';
+          $('wod-strength').value = w.strength || '';
+          $('wod-metcon').value = w.metcon || '';
+          $('wod-scales').value = w.scales || '';
+          closeModal();
+          toast('WOD cargado ✓');
+        };
+      });
+    }, 100);
+  } catch (e) { toast('Error: '+e.message); }
+};
+
+$('btn-calc-rm').onclick = () => {
+  const rm = parseFloat($('calc-1rm').value);
+  const pct = parseFloat($('calc-pct').value);
+  if (isNaN(rm) || isNaN(pct)) { $('calc-result').textContent = '— kg'; return; }
+  const result = (rm * pct / 100);
+  $('calc-result').textContent = `${result.toFixed(1)} kg`;
+};
+
+/* ================================================================
+   CLASES (booking)
+================================================================= */
+async function loadClasses() {
+  try {
+    const snap = await db.collection('coaches').doc(currentUser.uid).collection('classes').get();
+    const classes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const todayDow = new Date().getDay();
+    const today = classes.filter(c => (c.days||[]).includes(todayDow)).sort((a,b) => (a.time||'').localeCompare(b.time||''));
+
+    $('classes-today').innerHTML = today.length ? today.map(c => {
+      const booked = (c.bookings && c.bookings[todayStr()]) || [];
+      const cap = c.capacity || 10;
+      return `
+        <div class="class-row" data-id="${c.id}">
+          <div class="class-time">${c.time || '--:--'}</div>
+          <div class="class-info">
+            <div class="nm">${c.name || 'Clase'}</div>
+            <div class="cap">${booked.length}/${cap} reservados</div>
+          </div>
+          <div class="class-actions">
+            <button class="btn-secondary view-bookings" data-id="${c.id}">VER</button>
+          </div>
+        </div>
+      `;
+    }).join('') : '<div class="empty-state">No hay clases hoy</div>';
+
+    $('classes-all').innerHTML = classes.length ? classes.map(c => `
+      <div class="class-row" data-id="${c.id}">
+        <div class="class-time">${c.time||'--:--'}</div>
+        <div class="class-info">
+          <div class="nm">${c.name||'Clase'}</div>
+          <div class="cap">${(c.days||[]).map(d => DAYS_ES[d].substring(0,3)).join(' ')}</div>
+        </div>
+        <div class="class-actions">
+          <button class="btn-secondary edit-class" data-id="${c.id}">✏</button>
+          <button class="btn-danger del-class" data-id="${c.id}">🗑</button>
+        </div>
+      </div>
+    `).join('') : '<div class="empty-state">Sin horarios cargados</div>';
+
+    document.querySelectorAll('.del-class').forEach(b => b.onclick = async (e) => {
+      e.stopPropagation();
+      if (!confirm('¿Eliminar horario?')) return;
+      await db.collection('coaches').doc(currentUser.uid).collection('classes').doc(b.dataset.id).delete();
+      loadClasses();
+    });
+
+    document.querySelectorAll('.edit-class').forEach(b => b.onclick = (e) => {
+      e.stopPropagation();
+      const c = classes.find(x => x.id === b.dataset.id);
+      openClassModal(c);
+    });
+
+    document.querySelectorAll('.view-bookings').forEach(b => b.onclick = (e) => {
+      e.stopPropagation();
+      const c = classes.find(x => x.id === b.dataset.id);
+      const booked = (c.bookings && c.bookings[todayStr()]) || [];
+      openModal(`${c.name} · ${c.time}`, `
+        <div style="font-size:13px;color:#aaa;margin-bottom:12px">Hoy reservaron:</div>
+        ${booked.length ? booked.map(uid => {
+          const s = students.find(x => x.id === uid);
+          return `<div class="alert-line"><span class="pin"></span><div class="info"><div class="name">${s?s.name:'Alumno'}</div></div></div>`;
+        }).join('') : '<div class="empty-state">Nadie reservó</div>'}
+      `, null, 'Cerrar');
+    });
+  } catch (e) {
+    $('classes-all').innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+  }
+}
+
+$('btn-new-class').onclick = () => openClassModal();
+
+function openClassModal(existing) {
+  const days = existing?.days || [];
+  openModal(existing ? 'Editar Horario' : 'Nuevo Horario', `
+    <div class="field-group"><label>Nombre</label><input id="cl-name" placeholder="Mañana / Tarde / Noche" value="${existing?.name||''}"></div>
+    <div class="field-group"><label>Hora</label><input id="cl-time" type="time" value="${existing?.time||''}"></div>
+    <div class="field-group"><label>Capacidad</label><input id="cl-cap" type="number" value="${existing?.capacity||10}"></div>
+    <div class="field-group">
+      <label>Días</label>
+      <div style="display:flex;flex-wrap:wrap;gap:4px">
+        ${DAYS_ES.map((d,i) => `
+          <label style="display:flex;align-items:center;gap:4px;font-family:'Barlow Condensed';font-size:12px;background:#111;padding:6px 8px;border-radius:4px;border:1px solid #1e1e1e">
+            <input type="checkbox" class="cl-day" value="${i}" ${days.includes(i)?'checked':''} style="width:auto"> ${d.substring(0,3)}
+          </label>
+        `).join('')}
+      </div>
+    </div>
+  `, async () => {
+    const time = $('cl-time').value;
+    if (!time) { toast('Falta hora'); return false; }
+    const selDays = Array.from(document.querySelectorAll('.cl-day:checked')).map(c => parseInt(c.value));
+    if (!selDays.length) { toast('Elegí al menos un día'); return false; }
+    const data = {
+      name: $('cl-name').value.trim() || 'Clase',
+      time, capacity: parseInt($('cl-cap').value)||10,
+      days: selDays,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    try {
+      const ref = db.collection('coaches').doc(currentUser.uid).collection('classes');
+      if (existing) await ref.doc(existing.id).update(data);
+      else await ref.add({...data, bookings:{}, createdAt: firebase.firestore.FieldValue.serverTimestamp()});
+      toast('Horario guardado ✓');
+      loadClasses();
+      return true;
+    } catch (e) { toast('Error: '+e.message); return false; }
+  });
+}
+
+/* ================================================================
+   BANCO
+================================================================= */
+document.querySelectorAll('#screen-bank .filter-chips .chip').forEach(c => {
+  c.onclick = () => {
+    document.querySelectorAll('#screen-bank .filter-chips .chip').forEach(x => x.classList.remove('active'));
+    c.classList.add('active');
+    currentBankTab = c.dataset.bank;
+    renderBank();
+  };
+});
+
+async function renderBank() {
+  const list = $('bank-list');
+  list.innerHTML = '<div class="loading">Cargando...</div>';
+  try {
+    if (currentBankTab === 'wods') {
+      const snap = await db.collection('coaches').doc(currentUser.uid).collection('wods_bank').get();
+      const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      list.innerHTML = items.length ? items.map(w => `
+        <div class="bm-card" data-id="${w.id}">
+          <div class="bm-head"><div class="bm-name">${w.name||'WOD'}</div></div>
+          <div class="bm-desc">${w.metcon||w.warmup||'—'}</div>
+          <div style="margin-top:8px;display:flex;gap:6px">
+            <button class="btn-danger del-wod-bank" data-id="${w.id}" style="flex:1;font-size:10px;padding:4px 8px">🗑 ELIMINAR</button>
+          </div>
+        </div>
+      `).join('') : '<div class="empty-state">Sin WODs propios</div>';
+      list.querySelectorAll('.del-wod-bank').forEach(b => b.onclick = async () => {
+        if (!confirm('¿Eliminar WOD?')) return;
+        await db.collection('coaches').doc(currentUser.uid).collection('wods_bank').doc(b.dataset.id).delete();
+        renderBank();
+      });
+    } else if (currentBankTab === 'benchmarks') {
+      list.innerHTML = BENCHMARKS_DEFAULT.map(b => `
+        <div class="bm-card">
+          <div class="bm-head">
+            <div class="bm-name">${b.name}</div>
+            <div class="bm-cat">${b.cat}</div>
+          </div>
+          <div class="bm-desc">${b.desc}</div>
+        </div>
+      `).join('');
+    } else {
+      const snap = await db.collection('coaches').doc(currentUser.uid).collection('routines_bank').get();
+      const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      list.innerHTML = items.length ? items.map(r => `
+        <div class="bm-card" data-id="${r.id}">
+          <div class="bm-head"><div class="bm-name">${r.name||'Rutina'}</div></div>
+          <div class="bm-desc">${(r.exercises||[]).map(e => e.name).join(' · ')}</div>
+        </div>
+      `).join('') : '<div class="empty-state">Sin rutinas guardadas</div>';
+    }
+  } catch (e) {
+    list.innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+  }
+}
+
+$('btn-new-bank-item').onclick = () => {
+  if (currentBankTab === 'wods') {
+    openModal('Nuevo WOD al Banco', `
+      <div class="field-group"><label>Nombre</label><input id="bw-name" placeholder='ej: "Mi WOD"'></div>
+      <div class="field-group"><label>Warm Up</label><textarea id="bw-warmup"></textarea></div>
+      <div class="field-group"><label>Strength</label><textarea id="bw-strength"></textarea></div>
+      <div class="field-group"><label>Metcon</label><textarea id="bw-metcon"></textarea></div>
+      <div class="field-group"><label>Escalas</label><textarea id="bw-scales"></textarea></div>
+    `, async () => {
+      try {
+        await db.collection('coaches').doc(currentUser.uid).collection('wods_bank').add({
+          name: $('bw-name').value.trim(),
+          warmup: $('bw-warmup').value.trim(),
+          strength: $('bw-strength').value.trim(),
+          metcon: $('bw-metcon').value.trim(),
+          scales: $('bw-scales').value.trim(),
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        toast('WOD guardado ✓'); renderBank(); return true;
+      } catch (e) { toast('Error: '+e.message); return false; }
+    });
+  } else if (currentBankTab === 'benchmarks') {
+    toast('Los benchmarks oficiales no se editan');
+  } else {
+    toast('Próximamente — usá "Copiar rutina" desde un alumno');
+  }
+};
+
+/* ================================================================
+   MI DÍA — CARDS
+================================================================= */
+function loadDayScreen() {
+  const today = new Date();
+  const dow = today.getDay();
+
+  // Hoy entrenan
+  const trainees = [];
+  Object.entries(routinesByStudent).forEach(([sid, rs]) => {
+    const match = (rs||[]).find(r => DAYS_ES.indexOf(r.day) === dow);
+    if (match) {
+      const s = students.find(x => x.id === sid);
+      if (s) trainees.push({ s, routine: match });
+    }
+  });
+  $('today-trainees').innerHTML = trainees.length ? trainees.map(t => `
+    <div class="alert-line" data-id="${t.s.id}">
+      <span class="pin"></span>
+      <div class="info">
+        <div class="name">${t.s.name}</div>
+        <div class="meta">${t.routine.name||'Rutina'}</div>
+      </div>
+    </div>
+  `).join('') : '<div class="empty-state">Día libre. A descansar 💆</div>';
+  $('today-trainees').querySelectorAll('.alert-line').forEach(c => c.onclick = () => openStudentDetail(c.dataset.id));
+
+  // Pagos esta semana
+  const wPay = [];
+  students.forEach(s => {
+    if (!s.paymentDue) return;
+    const d = daysBetween(today, parseAttDate(s.paymentDue));
+    if (d <= 7) wPay.push({ s, d });
+  });
+  wPay.sort((a,b) => a.d - b.d);
+  $('week-payments').innerHTML = wPay.length ? wPay.map(p => `
+    <div class="alert-line ${p.d<0?'danger':'warning'}" data-id="${p.s.id}">
+      <span class="pin"></span>
+      <div class="info">
+        <div class="name">${p.s.name}</div>
+        <div class="meta">${p.d<0?`Vencido hace ${-p.d} días`:p.d===0?'Vence hoy':`Vence en ${p.d} días`}</div>
+      </div>
+    </div>
+  `).join('') : '<div class="empty-state">Todos al día 💪</div>';
+  $('week-payments').querySelectorAll('.alert-line').forEach(c => c.onclick = () => openStudentDetail(c.dataset.id));
+
+  // Fugas
+  const drop = [];
+  students.forEach(s => {
+    if (!s.lastAttendance) return;
+    const d = daysBetween(parseAttDate(s.lastAttendance), today);
+    if (d > 7) drop.push({ s, d });
+  });
+  drop.sort((a,b) => b.d - a.d);
+  $('dropout-alerts').innerHTML = drop.length ? drop.map(p => `
+    <div class="alert-line danger" data-id="${p.s.id}">
+      <span class="pin"></span>
+      <div class="info">
+        <div class="name">${p.s.name}</div>
+        <div class="meta">Hace ${p.d} días sin entrenar</div>
+      </div>
+    </div>
+  `).join('') : '<div class="empty-state">Nadie en alerta, vas joya 🔥</div>';
+  $('dropout-alerts').querySelectorAll('.alert-line').forEach(c => c.onclick = () => openStudentDetail(c.dataset.id));
+
+  // Resumen
+  const sevenAgo = new Date(today.getTime() - 7*86400000);
+  let active = 0, checks = 0;
+  students.forEach(s => {
+    if (s.lastAttendance && parseAttDate(s.lastAttendance) >= sevenAgo) active++;
+    if (s.attendanceDays) checks += (s.attendanceDays.filter(d => parseAttDate(d) >= sevenAgo).length || 0);
+  });
+  $('sum-total').textContent = students.length;
+  $('sum-active').textContent = active;
+  $('sum-checks').textContent = checks;
+
+  // Reservas de hoy
+  loadTodayBookings();
+}
+
+async function loadTodayBookings() {
+  try {
+    const snap = await db.collection('coaches').doc(currentUser.uid).collection('classes').get();
+    const classes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const dow = new Date().getDay();
+    const today = todayStr();
+    const todayClasses = classes.filter(c => (c.days||[]).includes(dow)).sort((a,b) => (a.time||'').localeCompare(b.time||''));
+
+    if (!todayClasses.length) {
+      $('today-bookings').innerHTML = '<div class="empty-state">No hay clases hoy</div>';
+      return;
+    }
+    $('today-bookings').innerHTML = todayClasses.map(c => {
+      const booked = (c.bookings && c.bookings[today]) || [];
+      const cap = c.capacity || 10;
+      return `
+        <div class="alert-line">
+          <span class="pin"></span>
+          <div class="info">
+            <div class="name">${c.time} · ${c.name||'Clase'}</div>
+            <div class="meta">${booked.length}/${cap} reservados</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (e) {
+    $('today-bookings').innerHTML = `<div class="empty-state">Error: ${e.message}</div>`;
+  }
+}
+
+/* ================================================================
+   MODAL HELPER
+================================================================= */
+function openModal(title, html, onSave, saveLabel='Guardar') {
+  const wrap = document.createElement('div');
+  wrap.className = 'modal-overlay';
+  wrap.innerHTML = `
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <div class="modal-title">${title}</div>
+        <button class="modal-close">✕</button>
+      </div>
+      <div class="modal-body">${html}</div>
+      <div class="modal-actions">
+        ${onSave ? `<button class="btn-primary modal-save">${saveLabel.toUpperCase()}</button>` : ''}
+        <button class="btn-secondary modal-cancel">${onSave ? 'CANCELAR' : 'CERRAR'}</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-container').appendChild(wrap);
+  wrap.onclick = closeModal;
+  wrap.querySelector('.modal-close').onclick = closeModal;
+  wrap.querySelector('.modal-cancel').onclick = closeModal;
+  if (onSave) {
+    wrap.querySelector('.modal-save').onclick = async () => {
+      const ok = await onSave();
+      if (ok !== false) closeModal();
+    };
+  }
+}
+
+function closeModal() {
+  const c = document.getElementById('modal-container');
+  if (c.firstChild) c.removeChild(c.firstChild);
+}
+
+/* ================================================================
+   FIN
+================================================================= */
+console.log('WOD Method Coach v1 — listo');
+</script>
+
+</body>
+</html>
